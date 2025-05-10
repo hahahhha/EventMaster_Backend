@@ -4,32 +4,72 @@ const Event = require('../models/Event');
 
 const AuthControllers = require('../controllers/authControllers');
 
-router.post('/create', async (req, res) => {
-    const currentUserRole = await AuthControllers.checkRole(req);
-    if (currentUserRole !== "admin" || currentUserRole !== "organizer") {
-        return res.status(403).json({
-            msg: "Недостаточно прав для создания мероприятия"
-        });
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/events')
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueName + path.extname(file.originalname));
     }
-    try {
-        const {title, description, img_url, status, year, month, day, hours, minutes, short_description, organizer_id} = req.body;
-        const isSuccess = await Event.create(title, 
-            description, img_url, status, year, month, day, 
-            hours, minutes, short_description, organizer_id);
-        if (isSuccess){
-            return res.status(200).json({
-                msg: "Мероприятие успешно создано"
-            });
-        }
-        return res.status(500).json({
-            msg: "Не удалось создать мероприятие"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            msg: "Не удалось создать мероприятие"
-        });
-    }
+});
+
+// Фильтр для проверки типа файла
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true); // Принимаем файл
+    } else {
+        cb(new Error('Недопустимый тип файла. Разрешены только изображения (JPEG, PNG, GIF, WEBP, SVG)'), false);
+        // Или можно просто отклонить без ошибки:
+        // cb(null, false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // Ограничение размера (5MB)
+    }
+});
+
+module.exports = upload;
+router.post('/create', upload.single('image'), async (req, res) => {
+    const currentUserRole = await AuthControllers.checkRole(req);
+    if (currentUserRole !== "admin" && currentUserRole !== "organizer") {
+        return res.status(403).json({ msg: "Недостаточно прав" });
+    }
+  
+    try {
+        const { title, description, status, year, month, day, hours, minutes, short_description, organizer_id } = req.body;
+        
+        // Путь к загруженному файлу (если он есть)
+        const img_url = req.file ? `/public/events/${req.file.filename}` : null;
+    
+        const isSuccess = await Event.create(
+          title, 
+          description, 
+          img_url,
+          status, 
+          year, month, day, 
+          hours, minutes, 
+          short_description, 
+          organizer_id
+        );
+    
+        if (isSuccess) {
+          return res.status(200).json({ msg: "Мероприятие создано" });
+        }
+        return res.status(500).json({ msg: "Ошибка при создании" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ msg: "Ошибка сервера" });
+    }
 });
 
 router.get('/:id', async (req, res) => {

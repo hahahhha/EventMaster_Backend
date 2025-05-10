@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { Pool } = require('pg');
 const env = require('dotenv');
+const multer = require('multer');
 
 const authRoutes = require('./routes/authRoutes');
 const evtRoutes = require('./routes/eventRoutes');
@@ -13,6 +14,8 @@ const userRoutes = require('./routes/userRoutes');
 const PORT = 3001;
 
 const app = express();
+
+app.use(express.static('public'));
 
 app.use(express.json());
 app.use(cors({
