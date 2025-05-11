@@ -66,7 +66,7 @@ class AuthControllers {
                 return undefined;
             }
 
-            const user = await User.findById(decoded.id).select('role');
+            const user = await User.findById(decoded.id);
             if (!user) {
                 console.log('Role check failed: User not found');
                 return undefined;

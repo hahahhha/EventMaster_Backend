@@ -30,8 +30,15 @@ class Event {
         return rows;
     }
 
+    static async findBetweenDates(year1, month1, day1, year2, month2, day2) {
+        const date1 = `${year1}-${month1}-${day1}`;
+        const date2 = `${year2}-${month2}-${day2}`;
+        const { rows } = await pool.query(`SELECT * FROM event WHERE date BETWEEN $1 AND $2`, [date1, date2]);
+        return rows;
+    }
+
     static async findAll(){
-        const { rows } = await pool.query(`SELECT * FROM event`);
+        const { rows } = await pool.query(`SELECT * FROM event`, []);
         return rows;
     }
 }

@@ -25,8 +25,6 @@ const fileFilter = (req, file, cb) => {
         cb(null, true); // Принимаем файл
     } else {
         cb(new Error('Недопустимый тип файла. Разрешены только изображения (JPEG, PNG, GIF, WEBP, SVG)'), false);
-        // Или можно просто отклонить без ошибки:
-        // cb(null, false);
     }
 };
 
@@ -34,55 +32,43 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024 // Ограничение размера (5MB)
+        fileSize: 25 * 1024 * 1024 // Ограничение размера (25MB)
     }
 });
 
-module.exports = upload;
 router.post('/create', upload.single('image'), async (req, res) => {
     const currentUserRole = await AuthControllers.checkRole(req);
+    const organizer_id = await AuthControllers.getUserId(req);
     if (currentUserRole !== "admin" && currentUserRole !== "organizer") {
+        console.log(organizer_id, currentUserRole)
         return res.status(403).json({ msg: "Недостаточно прав" });
     }
-  
     try {
-        const { title, description, status, year, month, day, hours, minutes, short_description, organizer_id } = req.body;
+        const { title, description, status, year, month, day, hours, minutes, short_description } = req.body;
         
         // Путь к загруженному файлу (если он есть)
-        const img_url = req.file ? `/public/events/${req.file.filename}` : null;
+        const img_url = req.file ? `/events/${req.file.filename}` : null;
     
         const isSuccess = await Event.create(
-          title, 
-          description, 
-          img_url,
-          status, 
-          year, month, day, 
-          hours, minutes, 
-          short_description, 
-          organizer_id
+            title, 
+            description, 
+            img_url,
+            status, 
+            year, month, day, 
+            hours, minutes, 
+            short_description, 
+            organizer_id
         );
     
         if (isSuccess) {
-          return res.status(200).json({ msg: "Мероприятие создано" });
+            return res.status(200).json({ msg: "Мероприятие создано" });
         }
-        return res.status(500).json({ msg: "Ошибка при создании" });
+        console.log("Ошибка сервера при создании мероприятия")
+        return res.status(500).json({ msg: "Ошибка при создании мероприятия" });
     } catch (error) {
+        console.log("Ошибка сервера при создании мероприятия")
         console.error(error);
-        return res.status(500).json({ msg: "Ошибка сервера" });
-    }
-});
-
-router.get('/:id', async (req, res) => {
-    try {
-        const eventId = req.params.id;
-        const evt = await Event.findById(eventId);
-        return res.status(200).json({
-            event: evt
-        });
-    } catch (error) {
-        return res.status(500).json({
-            msg: "Не удалось получить событие по id"
-        });
+        return res.status(500).json({ msg: "Ошибка сервера при создании мероприятия" });
     }
 });
 
@@ -107,10 +93,45 @@ router.get('/all', async (req, res) => {
             events
         });
     } catch (error) {
+        console.log('Не удалось получить все события');
+        console.log(error);
         return res.status(500).json({
             msg: "Не удалось получить все события"
         });
     }
-})
+});
+
+router.get('/between', async (req, res) => {
+    try {
+        const {year1, day1, month1, year2, month2, day2} = req.query;
+        const events = await Event.findBetweenDates(year1, day1, month1, year2, month2, day2);
+        return res.status(200).json({
+            events
+        });
+    } catch (error) {
+        console.log('Не удалось получить события в диапазоне');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Не удалось получить события в диапазоне"
+        });
+    }
+}); 
+
+// в самый низ, чтобы не конфликтовало
+router.get('/:id', async (req, res) => {
+    try {
+        const eventId = req.params.id;
+        const evt = await Event.findById(parseInt(eventId));
+        return res.status(200).json({
+            event: evt
+        });
+    } catch (error) {
+        console.log('Не удалось получить событие по id');
+        console.error(error);
+        return res.status(500).json({
+            msg: "Не удалось получить событие по id"
+        });
+    }
+});
 
 module.exports = router;
