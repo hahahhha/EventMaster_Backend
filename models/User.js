@@ -1,14 +1,15 @@
 const pool = require('../config/db.js');
 
 class User {
-    static async create(name, surname, email, password_hash, role, avatar_url, birth_date) {
+    static async create(name, surname, patronymic, email, password_hash, role, birth_date) {
         try {
-            const res = await pool.query(`INSERT INTO "user" (name, surname, email, password_hash, role, avatar_url, birth_date)
+            const res = await pool.query(`INSERT INTO "user" (name, surname, email, password_hash, role, birth_date, patronymic)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
-                [name, surname, email, password_hash, role, avatar_url, birth_date]);
+                [name, surname, email, password_hash, role, birth_date, patronymic]);
             return true;
         } catch (error) {
             console.log('не удалось создать пользователя');
+            console.log(error)
             return false;
         }
     }
@@ -25,6 +26,7 @@ class User {
 
     static async getRegisteredEvents(userId) {
         const { rows } = await pool.query(`SELECT * FROM `)
+        // ...
     }
 }
 

@@ -22,7 +22,7 @@ const fileFilter = (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     
     if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true); // Принимаем файл
+        cb(null, true);
     } else {
         cb(new Error('Недопустимый тип файла. Разрешены только изображения (JPEG, PNG, GIF, WEBP, SVG)'), false);
     }
@@ -40,7 +40,6 @@ router.post('/create', upload.single('image'), async (req, res) => {
     const currentUserRole = await AuthControllers.checkRole(req);
     const organizer_id = await AuthControllers.getUserId(req);
     if (currentUserRole !== "admin" && currentUserRole !== "organizer") {
-        console.log(organizer_id, currentUserRole)
         return res.status(403).json({ msg: "Недостаточно прав" });
     }
     try {
@@ -75,7 +74,7 @@ router.post('/create', upload.single('image'), async (req, res) => {
 router.get('/bydate', async (req, res) => {
     try {
         const { year, month, day } = req.query;
-        const evts = Event.findByDate(year, month, day);
+        const evts = await Event.findByDate(year, month, day);
         return res.status(200).json({
             events: evts
         });
@@ -104,7 +103,7 @@ router.get('/all', async (req, res) => {
 router.get('/between', async (req, res) => {
     try {
         const {year1, day1, month1, year2, month2, day2} = req.query;
-        const events = await Event.findBetweenDates(year1, day1, month1, year2, month2, day2);
+        const events = await Event.findBetweenDates(year1, month1, day1, year2, month2, day2);
         return res.status(200).json({
             events
         });

@@ -42,7 +42,9 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/reg', async (req, res) => {
-    const { name, surname, email, password, role, avatar_url, birth_date } = req.body;
+    const { name, surname, patronymic, email, password, birth_date } = req.body;
+    const role = "user";
+    // console.log( name, surname, patronymic, email, password, role, avatar_url, birth_date)
     // const isAuthed = await AuthControllers.checkAuth(req);
     // if (!isAuthed) {
     //     return res.status(403).json({
@@ -58,7 +60,7 @@ router.post('/reg', async (req, res) => {
     // }
     const password_hash = await AuthControllers.hashPassword(password);
     try {
-        const isSuccess = await User.create(name, surname, email, password_hash, role, avatar_url, birth_date);
+        const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date);
         if (isSuccess) {
             return res.status(200).json({
                 msg: "Пользователь успешно зарегистрирован"

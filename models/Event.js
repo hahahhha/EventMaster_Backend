@@ -25,16 +25,63 @@ class Event {
     }
 
     static async findByDate(year, month, day) {
-        const date = `${year}-${month}-${day}`;
-        const { rows } = await pool.query(`SELECT * FROM event WHERE date=$1`, [date]);
-        return rows;
+        try {
+            year = parseInt(year);
+            month = parseInt(month);
+            day = parseInt(day);
+
+            if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                console.error("Некорректные значения года, месяца или дня при поиске события по дате");
+                return [];
+            }
+
+            const formattedMonth = String(month).padStart(2, '0');
+            const formattedDay = String(day).padStart(2, '0');
+            const startDateString = `${year}-${formattedMonth}-${formattedDay} 00:00:00`;
+            const endDateString = `${year}-${formattedMonth}-${formattedDay} 23:59:59`;
+
+            const { rows } = await pool.query(
+                `SELECT * FROM event WHERE date >= to_timestamp($1, 'YYYY-MM-DD HH24:MI:SS') AND date <= to_timestamp($2, 'YYYY-MM-DD HH24:MI:SS')`,
+                [startDateString, endDateString]
+            );
+
+            return rows;
+        } catch (error) {
+            console.error("Ошибка при поиске события по дате:", error);
+            return [];
+        }
     }
 
     static async findBetweenDates(year1, month1, day1, year2, month2, day2) {
-        const date1 = `${year1}-${month1}-${day1}`;
-        const date2 = `${year2}-${month2}-${day2}`;
-        const { rows } = await pool.query(`SELECT * FROM event WHERE date BETWEEN $1 AND $2`, [date1, date2]);
-        return rows;
+        try {
+            // Преобразуем входные параметры в числа и проверяем их валидность
+            const y1 = parseInt(year1);
+            const m1 = parseInt(month1);
+            const d1 = parseInt(day1);
+            const y2 = parseInt(year2);
+            const m2 = parseInt(month2);
+            const d2 = parseInt(day2);
+
+            if (isNaN(y1) || isNaN(m1) || isNaN(d1) || isNaN(y2) || isNaN(m2) || isNaN(d2)) {
+                console.error("Некорректные значения года, месяца или дня");
+                return [];
+            }
+
+            // Создаем строки дат в формате YYYY-MM-DD HH24:MI:SS
+            const startDateString = `${y1}-${m1}-${d1} 00:00:00`;
+            const endDateString = `${y2}-${m2}-${d2} 23:59:59.999`;
+            const { rows } = await pool.query(
+                `SELECT * FROM event 
+                WHERE date >= to_timestamp($1, 'YYYY-MM-DD HH24:MI:SS') AND 
+                    date <= to_timestamp($2, 'YYYY-MM-DD HH24:MI:SS')`,
+                [startDateString, endDateString]
+            );
+            return rows;
+
+        } catch (error) {
+            console.error("Ошибка при поиске событий между датами:", error);
+            return [];
+        }
     }
 
     static async findAll(){
