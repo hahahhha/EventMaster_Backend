@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/reg', async (req, res) => {
-    const { name, surname, patronymic, email, password, birth_date } = req.body;
+    const { name, surname, patronymic, email, password, birth_date, academic_group } = req.body;
     const role = "user";
     // console.log( name, surname, patronymic, email, password, role, avatar_url, birth_date)
     // const isAuthed = await AuthControllers.checkAuth(req);
@@ -60,7 +60,8 @@ router.post('/reg', async (req, res) => {
     // }
     const password_hash = await AuthControllers.hashPassword(password);
     try {
-        const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date);
+        const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group);
+        console.log(birth_date);
         if (isSuccess) {
             return res.status(200).json({
                 msg: "Пользователь успешно зарегистрирован"
@@ -84,8 +85,30 @@ router.get('/checkAuth', async (req, res) => {
     } else {
         return res.status(401).json({ isAuthenticated: false });
     }
-    
 });
+
+router.get('/me', async (req, res) => {
+    try {
+        const isAuthed = await AuthControllers.checkAuth(req);
+        if (!isAuthed) {
+            return res.status(200).json({
+                user: {}
+            });
+        }
+        const userId = await AuthControllers.getUserId(req);
+        const userData = await User.findById(userId);   
+        const {password_hash, ...user} = userData;
+        return res.status(200).json({
+            user: user
+        });
+    } catch (error) {
+        console.log('Не удалось получить информацию о пользователе (authRoutes.get(/me))');
+        console.log(error);
+        return res.status(500).json({
+            user: {}
+        });
+    }
+})
 
 
 
