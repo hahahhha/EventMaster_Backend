@@ -8,13 +8,16 @@ const EventUser = require('../models/EventVisitor.js');
 const AuthControllers = require('../controllers/authControllers.js');
 
 router.post('/regUserOnEvent', async (req, res) => {
-    if (!AuthControllers.checkAuth()) {
+    const isAuthed = await AuthControllers.checkAuth(req);
+    if (!isAuthed) {
         return res.status(403).json({
             msg: "Не удалось зарегистрировать пользователя на мероприятие - пользователь не авторизован"
         });
     }
     try {
-        const {user_id, event_id} = req.body;
+        const {event_id} = req.body;
+        const user_id = await AuthControllers.getUserId(req);
+        // console.log(event_id, user_id);
         if (!user_id || !event_id) {
             return res.status(400).json({
                 msg: "Не удалось зарегистрировать пользователя на мероприятие - необходимы id пользователя, id события"

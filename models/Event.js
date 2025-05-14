@@ -7,9 +7,10 @@ class Event {
 
         const date = `${year}-${formattedMonth}-${formattedDay} ${hours}:${minutes}:00`;
         try {
-            const res = await pool.query(`INSERT INTO event (title, description, img_url, status, date, short_description, organizer_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
-                [title, description, img_url, status, date, short_description, organizer_id]);
+            const res = await pool.query(
+                `INSERT INTO event (title, description, img_url, status, date, short_description, organizer_id, attendees)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
+                [title, description, img_url, status, date, short_description, organizer_id, 0]);
             
             return true;
         } catch (error) {
@@ -19,9 +20,30 @@ class Event {
         }
     }
 
+    static async findByTitleOrDesc(param) {
+        try {
+            const searchPattern = `%${param}%`; 
+            const res = await pool.query(
+                `SELECT * FROM event 
+                WHERE title ILIKE $1 OR description ILIKE $1`, 
+                [searchPattern]
+            );
+            return res.rows;
+        } catch (error) {
+            console.error('Не удалось получить события по ключевому слову:', error);
+            return []; 
+        }
+    }
+
     static async findById(id) {
-        const { rows } = await pool.query(`SELECT * FROM event WHERE id=$1`, [id]);
-        return rows[0];
+        try {
+            const { rows } = await pool.query(`SELECT * FROM event WHERE id=$1`, [id]);
+            return rows[0];
+        } catch (error) {
+            console.log('Не удалось найти событие по id');
+            console.log(error);
+            return undefined;
+        }
     }
 
     static async findByDate(year, month, day) {

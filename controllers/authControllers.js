@@ -23,7 +23,8 @@ class AuthControllers {
     static async getUserId(req) {
         const isAuthed = await this.checkAuth(req);
         if (!isAuthed) {
-            return false;
+            // console.log('ne')
+            return ;
         }
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.SECRET_KEY);
@@ -37,19 +38,21 @@ class AuthControllers {
     
     static async checkAuth(req) {
         try {
-            const token = req.cookies?.token;
+            // console.log(req.cookies);
+            const token = req.cookies.token;
+            // console.log(token);
             if (!token) {
                 return false;
             }
             const decoded = jwt.verify(token, process.env.SECRET_KEY);
             
             if (!decoded.id) {
-                console.log('Authentication failed: Invalid token payload');
+                console.log('Ошибка checkAuth - неверный токен');
                 return false;
             }
             return true;
         } catch (error) {
-            console.error('Authentication error:', error.message);
+            console.error('Ошибка checkAuth', error.message);
             return false;
         }
     }

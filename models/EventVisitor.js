@@ -7,6 +7,10 @@ class EventVisitor {
                 'INSERT INTO event_visitor (visitor_id, event_id) VALUES($1, $2)',
                 [userId, eventId]
             );
+            const updateEvent = await pool.query(
+                `UPDATE event SET attendees=attendees+1 WHERE id=$1`, 
+                [eventId]
+            );
             return true;
         } catch (error) {
             console.log('не удалось зарегистрировать пользователя на мероприятие');

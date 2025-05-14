@@ -71,6 +71,17 @@ router.post('/create', upload.single('image'), async (req, res) => {
     }
 });
 
+router.get('/params', async (req, res) => {
+    try {
+        const { key } = req.query;
+        const rows = await Event.findByTitleOrDesc(key);
+        return rows;
+    } catch (error) {
+        console.log('Не удалось получить мероприятия по ключам');
+        console.log(error);
+    }
+});
+
 router.get('/bydate', async (req, res) => {
     try {
         const { year, month, day } = req.query;
