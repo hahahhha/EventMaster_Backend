@@ -4,6 +4,9 @@ const Event = require('../models/Event');
 
 const AuthControllers = require('../controllers/authControllers');
 
+const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware');
+const checkIfUserRated = require('../middlewares/checkUserAlreadyRated');
+
 const multer = require('multer');
 const path = require('path');
 
@@ -126,6 +129,43 @@ router.get('/between', async (req, res) => {
         });
     }
 }); 
+
+router.post('/add-rate', checkAuthMiddleware, checkIfUserRated, async (req, res) => {
+    // учет новой оценки мероприятия
+    try {
+        const eventId = req.body.id;
+        const rateValue = req.body.value;
+        if (rateValue < 0 || rateValue > 5) {
+            return res.status(400).json({
+                msg: "Некорректная оценка"
+            });
+        }
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(400).json({
+                msg: "Не удалось найти мероприятие по данному id"
+            });
+        }
+        const newRatingPointsSum = event.rating_points_sum + rateValue;
+        const newRatersAmount = event.raters_amount + 1;
+        const userId = await AuthControllers.getUserId(req);
+        const isUpdatedSuccess = await Event.updateRating(userId, eventId, newRatingPointsSum, newRatersAmount);
+        if (isUpdatedSuccess) {
+            return res.status(200).json({
+                msg: "Оценка учтена"
+            });
+        }
+        return res.status(500).json({
+            msg: 'Не удалось добавить оценку мероприятию'
+        })
+    } catch (error) {
+        console.log('Не удалось добавить оценку мероприятию');
+        console.log(error);
+        return res.status(500).json({
+            msg: 'Не удалось добавить оценку мероприятию'
+        })
+    }
+});
 
 // в самый низ, чтобы не конфликтовало
 router.get('/:id', async (req, res) => {

@@ -9,6 +9,7 @@ const User = require('../models/User.js');
 const SECRET_KEY = process.env.SECRET_KEY;
 
 const AuthControllers = require('../controllers/authControllers.js');
+const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware.js');
 // /api/auth
 
 router.post('/login', async (req, res) => {
@@ -87,14 +88,8 @@ router.get('/checkAuth', async (req, res) => {
     }
 });
 
-router.get('/me', async (req, res) => {
+router.get('/me', checkAuthMiddleware, async (req, res) => {
     try {
-        const isAuthed = await AuthControllers.checkAuth(req);
-        if (!isAuthed) {
-            return res.status(200).json({
-                user: {}
-            });
-        }
         const userId = await AuthControllers.getUserId(req);
         const userData = await User.findById(userId);   
         const {password_hash, ...user} = userData;
@@ -110,6 +105,18 @@ router.get('/me', async (req, res) => {
     }
 })
 
-
+router.get('/me/id', checkAuthMiddleware, async (req, res) => {
+    try {
+        const userId = await AuthControllers.getUserId(req);
+        return res.status(200).json({
+            id: userId
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: "Не удалось получить ID пользователя"
+        });
+    }
+});
 
 module.exports = router;

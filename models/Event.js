@@ -110,6 +110,19 @@ class Event {
         const { rows } = await pool.query(`SELECT * FROM event`, []);
         return rows;
     }
+
+    static async updateRating(userId, eventId, ratingSum, ratersAmount) {
+        try {
+            await pool.query(`UPDATE event SET rating_points_sum=$1, raters_amount=$2 WHERE id=$3`, 
+                [ratingSum, ratersAmount, userId]);
+            await pool.query(`INSERT INTO event_rater (rater_id, event_id) VALUES ($1, $2)`, [userId, eventId]);
+            return true;
+        } catch (error) {
+            console.log('Ошибка при попытке обновить рейтинг');
+            console.log(error);
+            return false;
+        }
+    }
 }
 
 module.exports = Event;

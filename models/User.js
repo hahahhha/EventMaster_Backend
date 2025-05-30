@@ -48,6 +48,29 @@ class User {
         
         return rows;
     }
+
+    static async changeUserPoints(userId, amount) {
+        try {
+            await pool.query(`
+                UPDATE "user" SET points=points+$1 WHERE id=$2
+                `, [amount, userId]
+            );
+            return true;
+        } catch (error) {
+            console.log('не удалось обновить очки у пользователя');
+            console.log(error);
+            return false;
+        }
+    }
+
+    static async getAllByDesc() {
+        const { rows } = await pool.query(`
+            SELECT * FROM "user"
+            ORDER BY points DESC
+            `);
+
+        return rows;
+    } 
 }
 
 module.exports = User;
