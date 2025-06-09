@@ -167,6 +167,55 @@ router.post('/add-rate', checkAuthMiddleware, checkIfUserRated, async (req, res)
     }
 });
 
+router.post('/add-comment', checkAuthMiddleware, async (req, res) => {
+    try {
+        const { event_id, text, reply_to_id } = req.body;
+        if (!event_id || !text) {
+            return res.status(400).json({
+                msg: "Некорректный формат запроса для добавления комментария к событию"
+            });
+        }
+        const userId = await AuthControllers.getUserId(req);
+        if (!reply_to_id) {
+            const isAddedSuccess = await Event.addNoReplyComment(userId, event_id, text);
+        } else {
+            // ...
+        }
+        return res.status(200).json({
+            msg: "Комментарий к событию успешно добавлен"
+        });
+    } catch (error) {
+        console.log('Не удалось добавить комментарий к событию');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Не удалось добавить комментарий к событию"
+        });
+    }
+});
+
+router.get('/comments', async (req, res) => {
+    try {
+        const eventId = req.query.id;
+        if (!eventId) {
+            return res.status(400).json({
+                msg: "Передайте id события через query-параметры"
+            });
+        }
+        const comments = await Event.getEventComments(eventId);
+        return res.status(200).json({
+            comments
+        });
+    } catch (error) {
+        console.log('Не удалось получить все комментарии к событию');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Не удалось получить все комментарии к событию"
+        });
+    }
+    
+
+});
+
 // в самый низ, чтобы не конфликтовало
 router.get('/:id', async (req, res) => {
     try {

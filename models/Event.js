@@ -123,6 +123,30 @@ class Event {
             return false;
         }
     }
+
+    // комментарий, не отвечающий другому комментарию
+    static async addNoReplyComment(userId, eventId, text) {
+        try {
+            await pool.query(`INSERT INTO comment (user_id, event_id, text) VALUES ($1, $2, $3)`, [userId, eventId, text]);
+            return true;
+        } catch (error) {
+            console.log('ошибка при добавлении комментария');
+            console.log(error);
+            return false;
+        }
+    }
+
+    static async getEventComments(eventId) {
+        try {
+            const { rows } = await pool.query(`SELECT comment.id, name, surname, text, created_at, likes, dislikes 
+                FROM comment INNER JOIN "user" ON comment.user_id = "user".id WHERE event_id=$1;`, [eventId]);
+            return rows;
+        } catch (error) {
+            console.log('Не удалось получить все комментарии к событию');
+            console.log(error);
+            return undefined;
+        }
+    }
 }
 
 module.exports = Event;

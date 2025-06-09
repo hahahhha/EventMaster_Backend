@@ -34,7 +34,7 @@ router.post('/login', async (req, res) => {
         httpOnly: true,
         secure: false, // на время разработки
         sameSite: 'strict',
-        maxAge: 1 * 1000 * 60 * 10 // недолго на время разработки (10min)
+        maxAge: 1 * 1000 * 60 * 60 // недолго на время разработки (10min)
       });
     console.log('cookie setted');
     return res.status(200).json({
