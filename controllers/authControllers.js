@@ -57,7 +57,7 @@ class AuthControllers {
         }
     }
 
-    static async checkRole(req) {
+    static async getRole(req) {
         try {
             const token = req.cookies?.token;
             if (!token) {

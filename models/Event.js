@@ -136,9 +136,22 @@ class Event {
         }
     }
 
+    static async addReplyComment(userId, eventId, text, replyToId) {
+        try {
+            await pool.query(`INSERT INTO comment (user_id, event_id, text, answer_to_id) VALUES ($1, $2, $3, $4)`,
+                [userId, eventId, text, replyToId]
+            );
+            return true;
+        } catch (error) {
+            console.log('ошибка при добавлении коммента с replyid');
+            console.log(error);
+            return false;
+        }
+    }
+
     static async getEventComments(eventId) {
         try {
-            const { rows } = await pool.query(`SELECT comment.id, name, surname, text, created_at, likes, dislikes 
+            const { rows } = await pool.query(`SELECT comment.id AS comment_id, "user".id AS user_id, name, surname, text, created_at, likes, dislikes 
                 FROM comment INNER JOIN "user" ON comment.user_id = "user".id WHERE event_id=$1;`, [eventId]);
             return rows;
         } catch (error) {

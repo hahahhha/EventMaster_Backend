@@ -40,7 +40,7 @@ const upload = multer({
 });
 
 router.post('/create', upload.single('image'), async (req, res) => {
-    const currentUserRole = await AuthControllers.checkRole(req);
+    const currentUserRole = await AuthControllers.getRole(req);
     const organizer_id = await AuthControllers.getUserId(req);
     if (currentUserRole !== "admin" && currentUserRole !== "organizer") {
         return res.status(403).json({ msg: "Недостаточно прав" });
@@ -179,7 +179,7 @@ router.post('/add-comment', checkAuthMiddleware, async (req, res) => {
         if (!reply_to_id) {
             const isAddedSuccess = await Event.addNoReplyComment(userId, event_id, text);
         } else {
-            // ...
+            const isAddedSuccess = await Event.addReplyComment(userId, event_id, text, reply_to_id);
         }
         return res.status(200).json({
             msg: "Комментарий к событию успешно добавлен"

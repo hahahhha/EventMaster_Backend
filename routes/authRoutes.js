@@ -119,4 +119,25 @@ router.get('/me/id', checkAuthMiddleware, async (req, res) => {
     }
 });
 
+router.get('/me/check-admin-role', checkAuthMiddleware, async (req, res) => {
+    try {
+        const role = await AuthControllers.getRole(req);
+        if (role !== 'admin') {
+            return res.status(403).json({
+                isAdminRole: false
+            })
+        }
+        return res.status(200).json({
+            isAdminRole: true
+        })
+    } catch (error) {
+        console.log('Ошибка check-admin-role');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Ошибка при получении роли",
+            isAdminRole: false
+        });
+    }
+});
+
 module.exports = router;
