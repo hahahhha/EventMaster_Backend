@@ -111,16 +111,32 @@ class Event {
         return rows;
     }
 
-    static async updateRating(userId, eventId, ratingSum, ratersAmount) {
+    static async updateRating(userId, eventId, ratingSum, ratersAmount, rating) {
         try {
             await pool.query(`UPDATE event SET rating_points_sum=$1, raters_amount=$2 WHERE id=$3`, 
-                [ratingSum, ratersAmount, userId]);
-            await pool.query(`INSERT INTO event_rater (rater_id, event_id) VALUES ($1, $2)`, [userId, eventId]);
+                [ratingSum, ratersAmount, eventId]);
+            await pool.query(`INSERT INTO event_rater (rater_id, event_id, rating) VALUES ($1, $2, $3)`, [userId, eventId, rating]);
             return true;
         } catch (error) {
             console.log('Ошибка при попытке обновить рейтинг');
             console.log(error);
             return false;
+        }
+    }
+
+    static async getRatings(eventId) {
+        try {
+            const { rows } = await pool.query('SELECT rating FROM event_rater WHERE event_id=$1', [eventId]);
+            const stat = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            rows.forEach((item) => {
+                stat[item.rating]++;
+            });
+            // console.log(stat);
+            return stat;
+        } catch (error) {
+            console.log('Не удалось получить все оценки мероприятия');
+            console.log(error);
+            return undefined;
         }
     }
 

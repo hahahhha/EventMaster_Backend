@@ -6,6 +6,7 @@ const AuthControllers = require('../controllers/authControllers');
 
 const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware');
 const checkIfUserRated = require('../middlewares/checkUserAlreadyRated');
+const checkAdminOrOrganizer = require('../middlewares/checkAdminOrOrganizerRole');
 
 const multer = require('multer');
 const path = require('path');
@@ -146,10 +147,10 @@ router.post('/add-rate', checkAuthMiddleware, checkIfUserRated, async (req, res)
                 msg: "Не удалось найти мероприятие по данному id"
             });
         }
-        const newRatingPointsSum = event.rating_points_sum + rateValue;
-        const newRatersAmount = event.raters_amount + 1;
+        const newRatingPointsSum = parseInt(event.rating_points_sum) + parseInt(rateValue);
+        const newRatersAmount = parseInt(event.raters_amount) + 1;
         const userId = await AuthControllers.getUserId(req);
-        const isUpdatedSuccess = await Event.updateRating(userId, eventId, newRatingPointsSum, newRatersAmount);
+        const isUpdatedSuccess = await Event.updateRating(userId, eventId, newRatingPointsSum, newRatersAmount, rateValue);
         if (isUpdatedSuccess) {
             return res.status(200).json({
                 msg: "Оценка учтена"
@@ -163,6 +164,26 @@ router.post('/add-rate', checkAuthMiddleware, checkIfUserRated, async (req, res)
         console.log(error);
         return res.status(500).json({
             msg: 'Не удалось добавить оценку мероприятию'
+        })
+    }
+});
+
+router.get('/ratings', checkAuthMiddleware, checkAdminOrOrganizer, async (req, res) => {
+    try {
+        const {id} = req.query;
+        if (!id) {
+            return res.status(400).json({
+                msg: "Укажите корректный id мероприятия"
+            });
+        }
+        const stat = await Event.getRatings(id);
+        return res.status(200).json({
+            stat
+        });
+    } catch (error) {
+        console.log('Ошибка при получении оценок мероприятия');
+        return res.status(500).json({
+            msg: "Ошибка при получении оценок мероприятия"
         })
     }
 });
