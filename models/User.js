@@ -1,16 +1,25 @@
 const pool = require('../config/db.js');
 
 class User {
-    static async create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group) {
+    static async create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group, verifyCode) {
         try {
-            const res = await pool.query(`INSERT INTO "user" (name, surname, email, password_hash, role, birth_date, patronymic, academic_group)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
-                [name, surname, email, password_hash, role, birth_date, patronymic, academic_group]);
+            const res = await pool.query(`
+                INSERT INTO "user" (name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verify_code)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, 
+                [name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verifyCode]);
             return true;
         } catch (error) {
             console.log('не удалось создать пользователя');
             console.log(error)
             return false;
+        }
+    }
+
+    static async verify(email, code) {
+        try {
+            await pool.query(`UPDATE "user" SET verified=true WHERE email=$1`, [email]);
+        } catch (error) {
+            console.log('Не удалось верифицировать пользователя', error);
         }
     }
 

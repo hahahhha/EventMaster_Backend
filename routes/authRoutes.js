@@ -10,6 +10,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 
 const AuthControllers = require('../controllers/authControllers.js');
 const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware.js');
+const checkAdminRole = require('../middlewares/checkAdminOrOrganizerRole.js');
 // /api/auth
 
 router.post('/login', async (req, res) => {
@@ -42,41 +43,44 @@ router.post('/login', async (req, res) => {
     });
 });
 
-router.post('/reg', async (req, res) => {
-    const { name, surname, patronymic, email, password, birth_date, academic_group } = req.body;
-    const role = "user";
-    // console.log( name, surname, patronymic, email, password, role, avatar_url, birth_date)
-    // const isAuthed = await AuthControllers.checkAuth(req);
-    // if (!isAuthed) {
-    //     return res.status(403).json({
-    //         msg: "Не выполнен вход"
-    //     });
-    // }
 
-    // const currentUserRole = await AuthControllers.checkRole(req);
-    // if (currentUserRole !== "admin") {
-    //     return res.status(403).json({
-    //         msg: "Недостаточно прав для регистрации пользователя"
-    //     });
-    // }
-    const password_hash = await AuthControllers.hashPassword(password);
+router.post('/reg', 
+    async (req, res) => await AuthControllers.registerRole(req, res, 'user'));
+
+router.post('/reg-admin', checkAuthMiddleware, checkAdminRole, 
+    async (req, res) => await AuthControllers.registerRole(req, res, 'admin'));
+
+router.post('/reg-organizer', checkAuthMiddleware, checkAdminRole, 
+    async (req, res) => await AuthControllers.registerRole(req, res, 'organizer'));
+
+router.post('/verify', checkAuthMiddleware, async (req, res) => {
+    // ...
+});
+
+router.post('/verify-admin', checkAuthMiddleware, checkAdminRole, async (req, res) => {
     try {
-        const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group);
-        console.log(birth_date);
-        if (isSuccess) {
-            return res.status(200).json({
-                msg: "Пользователь успешно зарегистрирован"
+        const {email, code} = req.body;
+        const verifyingUser = await User.findByEmail(email);
+        if (verifyingUser.verify_code !== String(code)) {
+            console.log(verifyingUser.verify_code);
+            console.log(code);
+            return res.status(403).json({
+                msg: "Коды не совпадают"
             });
         } else {
-            return res.status(409).json({
-                msg: "Пользователь с таким email уже существует"
-            });
+            await User.verify(email);
+            return res.status(200).json({
+                msg: "Верифицирован"
+            })
         }
     } catch (error) {
+        console.log('не удалось верифицировать');
+        console.log(error);
         return res.status(500).json({
-            msg: `authRoutes /reg. Не удалось зарегистрировать пользователя`, error
-        });
+            msg: "Ошибка при верификации"
+        })
     }
+    
 });
 
 router.get('/checkAuth', async (req, res) => {
