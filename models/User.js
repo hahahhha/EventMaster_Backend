@@ -80,6 +80,16 @@ class User {
 
         return rows;
     } 
+
+    static async changeRole(email, role) {
+        try {
+            await pool.query('UPDATE "user" SET role=$1 WHERE email=$2', [role, email]);
+            console.log('role changed');
+        } catch (error) {
+            console.log('не удалось сменить роль пользователя');
+            console.log(error);
+        }
+    }
 }
 
 module.exports = User;

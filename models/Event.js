@@ -98,6 +98,7 @@ class Event {
                     date <= to_timestamp($2, 'YYYY-MM-DD HH24:MI:SS')`,
                 [startDateString, endDateString]
             );
+            // console.log(rows);
             return rows;
 
         } catch (error) {

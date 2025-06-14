@@ -6,6 +6,9 @@ const Event = require('../models/Event.js');
 const EventUser = require('../models/EventVisitor.js');
 
 const AuthControllers = require('../controllers/authControllers.js');
+const checkAdminRole = require('../middlewares/checkAdminRole.js');
+const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware.js');
+const UserControllers = require('../controllers/userControllers.js');
 
 router.post('/regUserOnEvent', async (req, res) => {
     const isAuthed = await AuthControllers.checkAuth(req);
@@ -114,6 +117,34 @@ router.post('/update-points', async (req, res) => {
         return res.status(500).json({
             msg :"не удалось обновить баллы пользователя"
         });
+    }
+});
+
+router.post('/make-organizer', checkAuthMiddleware, checkAdminRole, async (req, res) => {
+    const { email } = req.body;
+    try {
+        await UserControllers.changeRole(email, 'organizer');
+        return res.status(200).json({
+            msg: "Роль успешно изменена"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            msg: "Не удалось изменить роль пользователя"
+        })
+    }
+});
+
+router.post('/make-admin', checkAuthMiddleware, checkAdminRole, async (req, res) => {
+    const { email } = req.body;
+    try {
+        await UserControllers.changeRole(email, 'admin');
+        return res.status(200).json({
+            msg: "Роль успешно изменена"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            msg: "Не удалось изменить роль пользователя"
+        })
     }
 });
 
