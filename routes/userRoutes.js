@@ -4,11 +4,14 @@ const router = express.Router();
 const User = require('../models/User.js');
 const Event = require('../models/Event.js');
 const EventUser = require('../models/EventVisitor.js');
+const EventRater = require('../models/EventRater.js')
 
 const AuthControllers = require('../controllers/authControllers.js');
 const checkAdminRole = require('../middlewares/checkAdminRole.js');
 const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware.js');
 const UserControllers = require('../controllers/userControllers.js');
+const checkAdminOrOrganizer = require('../middlewares/checkAdminOrOrganizerRole.js');
+const EventQr = require('../models/EventQr.js');
 
 router.post('/regUserOnEvent', async (req, res) => {
     const isAuthed = await AuthControllers.checkAuth(req);
@@ -120,6 +123,45 @@ router.post('/update-points', async (req, res) => {
     }
 });
 
+router.get('/check-rate', checkAuthMiddleware, async (req, res) => {
+    try {
+        const userId = await AuthControllers.getUserId(req);
+        const {eventId} = req.query
+        const isRated = await EventRater.checkIfUserRated(userId, eventId);
+        return res.status(200).json({
+            isRated
+        })
+    } catch (error) {
+        console.log('Ошибка при проверке наличия оценки у пользователя');
+        return res.status(500).json({
+            isRated: false,
+            msg: "Не удалось проверить наличие оценки от пользователя на мероприятии"
+        })
+    }
+});
+
+router.get('/my-event-rate', checkAuthMiddleware, async (req, res) => {
+    try {
+        const userId = await AuthControllers.getUserId(req);
+        const {eventId} = req.query;
+        const rate = await EventRater.getUserRate(userId, eventId);
+        if (!rate) {
+            return res.status(200).json({
+                rate: 0
+            })
+        }
+        return res.status(200).json({
+            rate
+        })
+    } catch (error) {
+        console.log("Не удалось получить оценку пользователя")
+        console.log(error);
+        return res.status(500).json({
+            msg: "Не удалось получить оценку пользователя"
+        })
+    }
+});
+
 router.post('/make-organizer', checkAuthMiddleware, checkAdminRole, async (req, res) => {
     const { email } = req.body;
     try {
@@ -144,6 +186,21 @@ router.post('/make-admin', checkAuthMiddleware, checkAdminRole, async (req, res)
     } catch (error) {
         return res.status(500).json({
             msg: "Не удалось изменить роль пользователя"
+        })
+    }
+});
+
+router.get('/my-events-with-qr', checkAuthMiddleware, checkAdminOrOrganizer, async (req, res) => {
+    try {
+        const userId = await AuthControllers.getUserId(req);
+        const events = await EventQr.getMyQrcodesWithEvents(userId);
+        return res.json({
+            events
+        })
+    } catch (error) {
+        return res.status(500).json({
+            msg: "Не удалось получить события с qr-кодами",
+            error
         })
     }
 });

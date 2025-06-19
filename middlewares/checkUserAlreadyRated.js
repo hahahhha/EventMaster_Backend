@@ -16,8 +16,10 @@ const checkUserAlreadyRated = async (req, res, next) => {
     const eventId = req.body.id;
     const isUserRated = await EventRater.checkIfUserRated(userId, eventId);
     if (isUserRated) {
-        return res.status(400).json({
-            msg: "Вы уже поставили оценку данному мероприятию"
+        const {rate} = req.body
+        await EventRater.changeUserRate(userId, eventId, rate);
+        return res.json({
+            msg: "Оценка изменена"
         });
     }
     next();

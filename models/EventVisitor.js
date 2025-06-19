@@ -1,5 +1,6 @@
 const pool = require('../config/db.js');
 
+// ТАБЛИЦА ЗАРЕГИСТРИРОВАННЫХ НА МЕРОПРИЯТИЕ ПОЛЬЗОВАТЕЛЕЙ
 class EventVisitor {
     static async registerUserOnEvent(userId, eventId) {
         try {

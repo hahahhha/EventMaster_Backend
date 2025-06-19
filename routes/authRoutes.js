@@ -11,6 +11,8 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const AuthControllers = require('../controllers/authControllers.js');
 const checkAuthMiddleware = require('../middlewares/checkAuthMiddleware.js');
 const checkAdminRole = require('../middlewares/checkAdminOrOrganizerRole.js');
+const EventQr = require('../models/EventQr.js');
+const EventAttendee = require('../models/EventAttendee.js');
 // /api/auth
 
 router.post('/login', async (req, res) => {
@@ -141,6 +143,85 @@ router.get('/me/check-admin-role', checkAuthMiddleware, async (req, res) => {
             msg: "Ошибка при получении роли",
             isAdminRole: false
         });
+    }
+});
+
+router.get('/me/check-organizer-or-admin', checkAuthMiddleware, async (req, res) => {
+    try {
+        const role = await AuthControllers.getRole(req);
+        if (role !== 'admin' && role !== 'organizer') {
+            return res.status(403).json({
+                isAdminOrOrganizer: false
+            })
+        }
+        return res.status(200).json({
+            isAdminOrOrganizer: true
+        })
+    } catch (error) {
+        console.log('Ошибка check-admin-role');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Ошибка при получении роли",
+            isAdminOrOrganizer: false
+        });
+    }
+});
+
+router.get('/me/check-organizer-role', checkAuthMiddleware,async (req, res) => {
+    try {
+        const role = await AuthControllers.getRole(req);
+        if (role !== 'organizer') {
+            return res.status(403).json({
+                isOrganizerRole: false
+            })
+        }
+        return res.status(200).json({
+            isOrganizerRole: true
+        })
+    } catch (error) {
+        console.log('Ошибка check-organizer');
+        console.log(error);
+        return res.status(500).json({
+            msg: "Ошибка при получении роли",
+            isOrganizerRole: false
+        });
+    }
+});
+
+router.post('/me/verify-attendee', checkAuthMiddleware, async (req, res) => {
+    console.log('verifying')
+    try {
+        const {eventId, token} = req.body;
+        const userId = await AuthControllers.getUserId(req);
+        if (!eventId || !token) {
+            return res.status(400).json({
+                msg: "Отправьте все данные (eventId, token)"
+            });
+        }
+        const isUserVerified = await EventAttendee.isUserVerified(userId, eventId);
+        if (isUserVerified) {
+            return res.status(403).json({
+                msg: "Вы уже подтвердили свое присутствие на данном мероприятии"
+            })
+        }
+
+        const isTokenCorrect = await EventQr.checkToken(eventId, token);
+        if (!isTokenCorrect) {
+            return res.status(418).json({
+                msg: "Не пытайтесь нас обмануть.......)"
+            })
+        }
+        await EventAttendee.addAttendee(userId, eventId);
+
+        return res.json({
+            msg: "Присутствие успешно подтверждено"
+        })
+    } catch (error) {
+        console.log('Не удалось подтвердить присутствие пользователя');
+        console.log(error);
+        return res.status(500).json({
+            msg: 'Не удалось подтвердить присутствие пользователя'
+        })
     }
 });
 

@@ -7,7 +7,7 @@ const checkAuthMiddleware = async (req, res, next) => {
     const isAuthed = await AuthControllers.checkAuth(req);
     if (!isAuthed) {
         return res.status(403).json({
-            msg: "Вы не авторизованы"
+            msg: "Вы не авторизованы eee"
         });
     }
     next();
