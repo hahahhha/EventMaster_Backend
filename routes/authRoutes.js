@@ -189,7 +189,6 @@ router.get('/me/check-organizer-role', checkAuthMiddleware,async (req, res) => {
 });
 
 router.post('/me/verify-attendee', checkAuthMiddleware, async (req, res) => {
-    console.log('verifying')
     try {
         const {eventId, token} = req.body;
         const userId = await AuthControllers.getUserId(req);
