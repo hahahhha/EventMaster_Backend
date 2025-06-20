@@ -211,7 +211,7 @@ router.post('/me/verify-attendee', checkAuthMiddleware, async (req, res) => {
             })
         }
         await EventAttendee.addAttendee(userId, eventId);
-
+        await User.changeUserPoints(userId, 3);
         return res.json({
             msg: "Присутствие успешно подтверждено"
         })

@@ -13,6 +13,7 @@ const path = require('path');
 const EventRater = require('../models/EventRater');
 const EventQr = require('../models/EventQr');
 const EventAttendee = require('../models/EventAttendee');
+const User = require('../models/User');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -217,6 +218,7 @@ router.post('/add-rate', checkAuthMiddleware, checkIfUserRated, async (req, res)
         const newRatingPointsSum = parseInt(event.rating_points_sum) + parseInt(rateValue);
         const newRatersAmount = parseInt(event.raters_amount) + 1;
         const isUpdatedSuccess = await Event.updateRating(userId, eventId, newRatingPointsSum, newRatersAmount, rateValue);
+        await User.changeUserPoints(userId, 1);
         if (isUpdatedSuccess) {
             return res.status(200).json({
                 msg: "Оценка учтена"
@@ -379,16 +381,43 @@ router.get('/qr-link', checkAuthMiddleware, checkAdminOrOrganizer, async (req, r
     }
 });
 
-router.get('/users', checkAuthMiddleware, checkAdminOrOrganizer, async (req, res) => {
+router.get('/attendees', checkAuthMiddleware, checkAdminOrOrganizer, async (req, res) => {
     try {
-        const {eventId} = req.body;
+        const {eventId} = req.query;
         const users = await EventAttendee.getEventAttendees(eventId);
+        const safe = users.map(item => {
+            let {user_id, name, surname, patronymic, institute, ...other} = item;
+            if (!institute) {
+                institute = 'Не указано';
+            }
+            return {user_id, name, surname, patronymic, institute} ;
+        })
         return res.json({
-            users
+            users: safe
         })
     } catch (error) {
         return res.status(500).json({
             msg: "Не удалось получить всех пользователей",
+            error
+        })
+    }
+});
+
+router.delete('/attendee', checkAuthMiddleware, checkAdminOrOrganizer, async (req, res) => {
+    try {
+        const {attendeeId, eventId} = req.query;
+        if (!attendeeId || !eventId) {
+            return res.status(400).json({
+                msg: "Заполните все поля (attendeeId, eventId)"
+            });
+        }
+        await EventAttendee.removeAttendee(attendeeId, eventId);
+        return res.json({
+            msg: "Посетитель успешно удален"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            msg: "Не удалось удалить пользователя с мероприятия",
             error
         })
     }

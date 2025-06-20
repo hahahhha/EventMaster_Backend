@@ -1,12 +1,12 @@
 const pool = require('../config/db.js');
 
 class User {
-    static async create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group, verifyCode) {
+    static async create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group, verifyCode, institute) {
         try {
             const res = await pool.query(`
-                INSERT INTO "user" (name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verify_code)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, 
-                [name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verifyCode]);
+                INSERT INTO "user" (name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verify_code, institute)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, 
+                [name, surname, email, password_hash, role, birth_date, patronymic, academic_group, verifyCode, institute]);
             return true;
         } catch (error) {
             console.log('не удалось создать пользователя');
@@ -64,6 +64,7 @@ class User {
                 UPDATE "user" SET points=points+$1 WHERE id=$2
                 `, [amount, userId]
             );
+            console.log('обновлено')
             return true;
         } catch (error) {
             console.log('не удалось обновить очки у пользователя');
@@ -87,6 +88,23 @@ class User {
             console.log('role changed');
         } catch (error) {
             console.log('не удалось сменить роль пользователя');
+            console.log(error);
+        }
+    }
+
+    static async totalDeleteUser(userId) {
+        try {
+            await pool.query(`DELETE FROM comment WHERE user_id=$1`, [userId]);
+            await pool.query(`DELETE FROM event_attendee WHERE user_id=$1`, [userId]);
+            await pool.query(`DELETE FROM comment WHERE user_id=$1`, [userId]);
+            await pool.query(`DELETE FROM event_rater WHERE rater_id=$1`, [userId]);
+            await pool.query(`DELETE FROM event_visitor WHERE visitor_id=$1`, [userId]);
+            await pool.query(`DELETE FROM event_qrtoken WHERE creator=$1`, [userId]);
+            await pool.query(`DELETE FROM event WHERE creator_id=$1`, [userId]);
+            await pool.query(`DELETE FROM event WHERE organizer_id=$1`, [userId]);
+            await pool.query(`DELETE FROM "user" WHERE id=$1`, [userId]);
+        } catch (error) {
+            console.log('не удалось полностью удалить пользователя');
             console.log(error);
         }
     }

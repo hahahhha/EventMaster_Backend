@@ -79,7 +79,7 @@ router.get('/by-points-desc', async (req, res) => {
     });
 });
 
-router.post('/update-points', async (req, res) => {
+router.post('/update-points', checkAdminOrOrganizer, async (req, res) => {
     // only for admin | organizer
     try {
         const amount = parseInt(req.body.amount);
@@ -200,6 +200,23 @@ router.get('/my-events-with-qr', checkAuthMiddleware, checkAdminOrOrganizer, asy
     } catch (error) {
         return res.status(500).json({
             msg: "Не удалось получить события с qr-кодами",
+            error
+        })
+    }
+});
+
+router.delete('/total-delete', /*checkAdminRole,*/ async (req, res) => {
+    try {
+        const {id} = req.query;
+        await User.totalDeleteUser(id);
+        console.log('deleted')
+        return res.json({
+            msg: "success"
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status({
+            msg: "не удалось удалить пользователя",
             error
         })
     }

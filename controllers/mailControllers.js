@@ -12,6 +12,7 @@ class MailController {
         //   else console.log('Отправлено:', info.response);
         // });
         console.log('отправка кода временно отключена (на время теста)')
+        console.log(`код: ${code}`)
     }
 }
 

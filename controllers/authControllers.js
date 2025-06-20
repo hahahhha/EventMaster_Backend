@@ -90,14 +90,14 @@ class AuthControllers {
     }
 
     static async registerRole(req, res, roleStr) {
-        const { name, surname, patronymic, email, password, birth_date, academic_group } = req.body;
+        const { name, surname, patronymic, email, password, birth_date, academic_group, institute } = req.body;
         const role = roleStr;
         const password_hash = await AuthControllers.hashPassword(password);
         const randomeCode = [...Array(6)].map(() => (this.getRandomInt(0, 9))).join('');
         await MailController.sendCode(email, randomeCode);
         console.log(randomeCode);
         try {
-            const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group, randomeCode);
+            const isSuccess = await User.create(name, surname, patronymic, email, password_hash, role, birth_date, academic_group, randomeCode, institute);
             // console.log(birth_date);
             if (isSuccess) {
                 console.log('успешно зареган ' + roleStr)
